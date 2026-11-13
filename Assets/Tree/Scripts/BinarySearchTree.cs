@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using Mono.Cecil.Cil;
 using Unity.IO.LowLevel.Unsafe;
 using UnityEditor.Experimental.GraphView;
@@ -34,10 +35,35 @@ public class BinarySearchTree<TKey, TValue> : IDictionary<TKey, TValue>
         }
     }
 
-    public ICollection<TKey> Keys => throw new System.NotImplementedException();
+    public ICollection<TKey> Keys
+    {
+        get
+        {
+            List<TKey> keys = new List<TKey>();
 
-    public ICollection<TValue> Values => throw new System.NotImplementedException();
+            foreach (var item in InOrderTraversal())
+            {
+                keys.Add(item.Key);
+            }
 
+            return keys;
+        }
+    }
+
+    public ICollection<TValue> Values
+    {
+        get
+        {
+            List<TValue> values = new List<TValue>();
+
+            foreach (var item in InOrderTraversal())
+            {
+                values.Add(item.Value);
+            }
+
+            return values;
+        }
+    }
     public int Count => CountNodes(root);
 
     protected virtual int CountNodes(TreeNode<TKey, TValue> node)
@@ -238,31 +264,78 @@ public class BinarySearchTree<TKey, TValue> : IDictionary<TKey, TValue>
         return GetEnumerator();
     }
 
+
     public virtual IEnumerable<KeyValuePair<TKey, TValue>> InOrderTraversal()
     {
-        TreeNode<TKey, TValue> current = root;
-        Stack<TreeNode<TKey, TValue>> stack = new Stack<TreeNode<TKey, TValue>>();
-        while (current != null)
+        return InOrderTraversal(root);
+    }
+    public virtual IEnumerable<KeyValuePair<TKey, TValue>> InOrderTraversal(TreeNode<TKey, TValue> node)
+    {
+        if (node == null)
         {
-            stack.Push(current);
-            current = current.Left;
+            yield break;
         }
-        current = stack.Pop();
-        while (current.Right != null)
+        foreach (var item in InOrderTraversal(node.Left))
         {
-            current = current.Right;
+            yield return item;
+        }
+
+        yield return new KeyValuePair<TKey, TValue>(node.Key, node.Value);
+
+        foreach (var item in InOrderTraversal(node.Right))
+        {
+            yield return item;
         }
 
     }
+
     public virtual IEnumerable<KeyValuePair<TKey, TValue>> PreOrderTraversal()
     {
-        throw new NotImplementedException();
+        return PreOrderTraversal(root);
+    }
+    public virtual IEnumerable<KeyValuePair<TKey, TValue>> PreOrderTraversal(TreeNode<TKey, TValue> node)
+    {
+        if (node == null)
+        {
+            yield break;
+        }
+        yield return new KeyValuePair<TKey, TValue>(node.Key, node.Value);
+        foreach (var item in PreOrderTraversal(node.Left))
+        {
+            yield return item;
+        }
+        foreach (var item in PreOrderTraversal(node.Right))
+        {
+            yield return item;
+        }
     }
     public virtual IEnumerable<KeyValuePair<TKey, TValue>> PostOrderTraversal()
     {
-        throw new NotImplementedException();
+        return InOrderTraversal(root);
+    }
+    public virtual IEnumerable<KeyValuePair<TKey, TValue>> PostOrderTraversal(TreeNode<TKey, TValue> node)
+    {
+        if (node == null)
+        {
+            yield break;
+        }
+        foreach (var item in PostOrderTraversal(node.Left))
+        {
+            yield return item;
+        }
+
+        foreach (var item in PostOrderTraversal(node.Right))
+        {
+            yield return item;
+        }
+        yield return new KeyValuePair<TKey, TValue>(node.Key, node.Value);
+
     }
     public virtual IEnumerable<KeyValuePair<TKey, TValue>> LevelOrderTraversal()
+    {
+        return LevelOrderTraversal(root);
+    }
+    public virtual IEnumerable<KeyValuePair<TKey, TValue>> LevelOrderTraversal(TreeNode<TKey, TValue> node)
     {
         TreeNode<TKey, TValue> current = root;
         if (current == null) yield break;
