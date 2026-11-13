@@ -41,9 +41,7 @@ public class CircularDoublyLinkedList<T> : IEnumerable<T>
             current = current.Next;
         }
     }
-    private void InsertBefore(
-    CircularDoublyLinkedListNode<T> target,
-    CircularDoublyLinkedListNode<T> newNode)
+    private void InsertBefore(CircularDoublyLinkedListNode<T> target, CircularDoublyLinkedListNode<T> newNode)
     {
         newNode.next = target;
         newNode.prev = target.prev;
@@ -118,7 +116,7 @@ public class CircularDoublyLinkedList<T> : IEnumerable<T>
         {
             return AddFirst(value);
         }
-        
+
         var newNode = new CircularDoublyLinkedListNode<T>(value);
         newNode.List = this;
 
@@ -173,7 +171,7 @@ public class CircularDoublyLinkedList<T> : IEnumerable<T>
             previous.next = node.next;
             next.prev = node.prev;
 
-            if(node == head)
+            if (node == head)
             {
                 head = next;
             }

@@ -11,6 +11,7 @@ public class LinkedListTest : MonoBehaviour
     {
         Run(TestCircularDoublyLinkedList);
     }
+    
     void TestCircularDoublyLinkedList()
     {
         Debug.Log("=== CircularDoublyLinkedList 테스트 시작 ===");
