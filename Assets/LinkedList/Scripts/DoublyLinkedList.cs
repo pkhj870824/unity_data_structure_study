@@ -1,9 +1,6 @@
-using System.Collections.Generic;
-using System.Collections;
 using System;
-using Unity.VisualScripting;
-using UnityEditor.Experimental.GraphView;
-
+using System.Collections;
+using System.Collections.Generic;
 
 public class DoublyLinkedListNode<T>
 {
@@ -11,21 +8,21 @@ public class DoublyLinkedListNode<T>
     public DoublyLinkedListNode<T> Next { get; set; }
     public DoublyLinkedListNode<T> Previous { get; set; }
     public DoublyLinkedList<T> List { get; set; }
+
     public DoublyLinkedListNode(T value)
     {
         Value = value;
     }
 }
 
-
 public class DoublyLinkedList<T> : IEnumerable<T>
 {
-
     private DoublyLinkedListNode<T> head;
     private DoublyLinkedListNode<T> tail;
-    public int Count { get; private set; }
-    public DoublyLinkedListNode<T> First => head;
 
+    public int Count { get; private set; }
+
+    public DoublyLinkedListNode<T> First => head;
     public DoublyLinkedListNode<T> Last => tail;
 
     public IEnumerator<T> GetEnumerator()
@@ -35,6 +32,16 @@ public class DoublyLinkedList<T> : IEnumerable<T>
         {
             yield return current.Value;
             current = current.Next;
+        }
+    }
+
+    public IEnumerable<T> Backward()
+    {
+        DoublyLinkedListNode<T> current = tail;
+        while (current != null)
+        {
+            yield return current.Value;
+            current = current.Previous;
         }
     }
 
@@ -48,26 +55,26 @@ public class DoublyLinkedList<T> : IEnumerable<T>
         var node = new DoublyLinkedListNode<T>(value);
         node.List = this;
 
-        node.Next = head;
-
-        if (head != null)
+        if (head == null)
         {
-            head.Previous = node;
-        }
-        if (tail == null)
-        {
+            head = node;
             tail = node;
         }
-        head = node;
-
+        else
+        {
+            node.Next = head;
+            head.Previous = node;
+            head = node;
+        }
         Count++;
         return node;
     }
+
     public DoublyLinkedListNode<T> AddLast(T value)
     {
         var node = new DoublyLinkedListNode<T>(value);
         node.List = this;
-        node.Previous = tail;
+
         if (tail == null)
         {
             head = node;
@@ -75,6 +82,7 @@ public class DoublyLinkedList<T> : IEnumerable<T>
         }
         else
         {
+            node.Previous = tail;
             tail.Next = node;
             tail = node;
         }
@@ -94,42 +102,41 @@ public class DoublyLinkedList<T> : IEnumerable<T>
         var newNode = new DoublyLinkedListNode<T>(value);
         newNode.List = this;
 
-        newNode.Next = node.Next;
         newNode.Previous = node;
+        newNode.Next = node.Next;
+        node.Next.Previous = newNode;
         node.Next = newNode;
-        newNode.Next.Previous = newNode;
 
         Count++;
         return newNode;
-
     }
 
     public DoublyLinkedListNode<T> AddBefore(DoublyLinkedListNode<T> node, T value)
     {
         ValidataNode(node);
+
         if (node == head)
         {
             return AddFirst(value);
         }
-        var previous = node.Previous;
-
 
         var newNode = new DoublyLinkedListNode<T>(value);
         newNode.List = this;
 
+        newNode.Previous = node.Previous;
         newNode.Next = node;
-        newNode.Previous = previous;
-        previous.Next = newNode;
-        newNode.Next.Previous = newNode;
+        node.Previous.Next = newNode;
+        node.Previous = newNode;
 
         Count++;
         return newNode;
     }
+
     public void RemoveFirst()
     {
         if (head == null)
         {
-            throw new InvalidOperationException("리스트가 비어있습니다");
+            throw new InvalidOperationException("리스트가 비어있습니다.");
         }
         Remove(head);
     }
@@ -138,7 +145,7 @@ public class DoublyLinkedList<T> : IEnumerable<T>
     {
         if (tail == null)
         {
-            throw new InvalidOperationException("리스트가 비어있습니다");
+            throw new InvalidOperationException("리스트가 비어있습니다.");
         }
         Remove(tail);
     }
@@ -158,30 +165,28 @@ public class DoublyLinkedList<T> : IEnumerable<T>
     {
         ValidataNode(node);
 
-        var previous = node.Previous;
-        var next = node.Next;
-
-        if (previous == null)
+        if (node.Previous == null)
         {
-            head = next;
+            head = node.Next;
         }
         else
         {
-            previous.Next = next;
+            node.Previous.Next = node.Next;
         }
 
-        if (next != null)
+        if (node.Next == null)
         {
-            next.Previous = previous;
+            tail = node.Previous;
+        }
+        else
+        {
+            node.Next.Previous = node.Previous;
         }
 
-        if (node == tail)
-        {
-            tail = previous;
-        }
-        node.Previous = null;
         node.Next = null;
+        node.Previous = null;
         node.List = null;
+
         Count--;
     }
 
@@ -199,10 +204,12 @@ public class DoublyLinkedList<T> : IEnumerable<T>
         }
         return null;
     }
+
     public bool Contains(T value)
     {
         return Find(value) != null;
     }
+
     public void Clear()
     {
         var current = head;
@@ -210,8 +217,8 @@ public class DoublyLinkedList<T> : IEnumerable<T>
         {
             var next = current.Next;
             current.Next = null;
-            current.List = null;
             current.Previous = null;
+            current.List = null;
             current = next;
         }
 
@@ -219,16 +226,6 @@ public class DoublyLinkedList<T> : IEnumerable<T>
         Count = 0;
     }
 
-    public IEnumerable<T> Backward()
-    {
-        DoublyLinkedListNode<T> current = tail;
-
-        while (current != null)
-        {
-            yield return current.Value;
-            current = current.Previous;
-        }
-    }
     private void ValidataNode(DoublyLinkedListNode<T> node)
     {
         if (node == null)

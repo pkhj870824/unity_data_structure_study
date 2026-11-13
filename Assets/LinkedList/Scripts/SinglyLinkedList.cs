@@ -1,10 +1,6 @@
-using System.Collections.Generic;
-using System.Collections;
 using System;
-
-
-
-
+using System.Collections;
+using System.Collections.Generic;
 
 public class SinglyLinkedList<T> : IEnumerable<T>
 {
@@ -12,21 +8,26 @@ public class SinglyLinkedList<T> : IEnumerable<T>
     {
         public T Value;
         public SinglyLinkedListNode Next;
+
         public SinglyLinkedListNode(T value)
         {
             Value = value;
         }
     }
+
     private SinglyLinkedListNode head;
     private SinglyLinkedListNode tail;
+
     public int Count { get; private set; }
+
     public T First
     {
         get
         {
+            // 비어 있으면 InvalidOperationException
             if (head == null)
             {
-                throw new InvalidOperationException("리스트가 비어있습니다");
+                throw new InvalidOperationException("리스트가 비어있습니다.");
             }
             return head.Value;
         }
@@ -35,9 +36,10 @@ public class SinglyLinkedList<T> : IEnumerable<T>
     {
         get
         {
+            // 비어 있으면 InvalidOperationException
             if (tail == null)
             {
-                throw new InvalidOperationException("리스트가 비어있습니다");
+                throw new InvalidOperationException("리스트가 비어있습니다.");
             }
             return tail.Value;
         }
@@ -63,13 +65,13 @@ public class SinglyLinkedList<T> : IEnumerable<T>
         var node = new SinglyLinkedListNode(value);
         node.Next = head;
         head = node;
-
         if (tail == null)
         {
             tail = node;
         }
         Count++;
     }
+
     public void AddLast(T value)
     {
         var node = new SinglyLinkedListNode(value);
@@ -85,12 +87,14 @@ public class SinglyLinkedList<T> : IEnumerable<T>
         }
         Count++;
     }
+
     public T RemoveFirst()
     {
         if (head == null)
         {
-            throw new InvalidOperationException("리스트가 비어있습니다");
+            throw new InvalidOperationException("리스트가 비어있습니다.");
         }
+
         T value = head.Value;
         head = head.Next;
         if (head == null)
@@ -100,9 +104,11 @@ public class SinglyLinkedList<T> : IEnumerable<T>
         Count--;
         return value;
     }
+
     public bool Remove(T value)
     {
         var comparer = EqualityComparer<T>.Default;
+
         SinglyLinkedListNode previous = null;
         SinglyLinkedListNode current = head;
 
@@ -118,6 +124,7 @@ public class SinglyLinkedList<T> : IEnumerable<T>
                 {
                     previous.Next = current.Next;
                 }
+
                 if (current == tail)
                 {
                     tail = previous;
@@ -125,12 +132,14 @@ public class SinglyLinkedList<T> : IEnumerable<T>
                 Count--;
                 return true;
             }
+
             previous = current;
             current = current.Next;
         }
-        return false;
 
+        return false;
     }
+
     public bool Contains(T value)
     {
         var comparer = EqualityComparer<T>.Default;
@@ -145,6 +154,7 @@ public class SinglyLinkedList<T> : IEnumerable<T>
         }
         return false;
     }
+
     public void Clear()
     {
         head = tail = null;

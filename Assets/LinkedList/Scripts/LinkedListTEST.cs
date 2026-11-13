@@ -11,7 +11,20 @@ public class LinkedListTest : MonoBehaviour
     {
         Run(TestCircularDoublyLinkedList);
     }
-    
+
+    void Run(Action test)
+    {
+        try
+        {
+            test();
+        }
+        catch (Exception e)
+        {
+            failCount++;
+            Debug.LogError($"[실패] {test.Method.Name} 중단 - 예상하지 못한 예외: {e}");
+        }
+    }
+
     void TestCircularDoublyLinkedList()
     {
         Debug.Log("=== CircularDoublyLinkedList 테스트 시작 ===");
@@ -22,18 +35,34 @@ public class LinkedListTest : MonoBehaviour
         var b = list.AddLast("B");
         list.AddLast("D");
         list.AddFirst("A");
-        Expect($"{string.Join(" <-> ", list)} (개수: {list.Count})", "A <-> B <-> D (개수: 3)", "정방향");
+        Expect(
+            $"{string.Join(" <-> ", list)} (개수: {list.Count})",
+            "A <-> B <-> D (개수: 3)",
+            "정방향"
+        );
 
         Debug.Log("\n2. 안쪽은 원형, 바깥은 null:");
-        Expect(list.Last.next == list.First && list.First.prev == list.Last, true, "내부 링크 원형");
-        Expect(list.Last.Next == null && list.First.Previous == null, true, "이음새의 Next/Previous는 null");
+        Expect(
+            list.Last.next == list.First && list.First.prev == list.Last,
+            true,
+            "내부 링크 원형"
+        );
+        Expect(
+            list.Last.Next == null && list.First.Previous == null,
+            true,
+            "이음새의 Next/Previous는 null"
+        );
 
         Debug.Log("\n3. 노드 기준 삽입 (AddAfter / AddBefore):");
         list.AddAfter(b, "C");
         list.AddBefore(list.First, "시작");
         list.AddAfter(list.Last, "끝");
         Expect(string.Join(" <-> ", list), "시작 <-> A <-> B <-> C <-> D <-> 끝", "정방향");
-        Expect(string.Join(" <-> ", list.Backward()), "끝 <-> D <-> C <-> B <-> A <-> 시작", "역방향");
+        Expect(
+            string.Join(" <-> ", list.Backward()),
+            "끝 <-> D <-> C <-> B <-> A <-> 시작",
+            "역방향"
+        );
 
         Debug.Log("\n4. 사용자 순회 (Next / Previous가 null에서 멈춤):");
         var forward = new List<string>();
@@ -46,21 +75,41 @@ public class LinkedListTest : MonoBehaviour
         {
             backward.Add(node.Value);
         }
-        Expect($"{string.Join(" -> ", forward)} / {string.Join(" -> ", backward)}", "시작 -> A -> B -> C -> D -> 끝 / 끝 -> D -> C -> B -> A -> 시작", "Next / Previous");
+        Expect(
+            $"{string.Join(" -> ", forward)} / {string.Join(" -> ", backward)}",
+            "시작 -> A -> B -> C -> D -> 끝 / 끝 -> D -> C -> B -> A -> 시작",
+            "Next / Previous"
+        );
 
         Debug.Log("\n5. 제거 (Remove(node) / Remove(T) / 양 끝):");
         list.Remove(b);
         Expect(list.Remove("D"), true, "Remove(\"D\")");
         list.RemoveFirst();
         list.RemoveLast();
-        Expect($"{string.Join(" <-> ", list)} (개수: {list.Count})", "A <-> C (개수: 2)", "남은 내용");
-        Expect(list.Last.next == list.First && list.Last.Next == null, true, "제거 후에도 안쪽 원형, 바깥 null");
+        Expect(
+            $"{string.Join(" <-> ", list)} (개수: {list.Count})",
+            "A <-> C (개수: 2)",
+            "남은 내용"
+        );
+        Expect(
+            list.Last.next == list.First && list.Last.Next == null,
+            true,
+            "제거 후에도 안쪽 원형, 바깥 null"
+        );
 
         Debug.Log("\n6. 노드 하나 / 빈 리스트:");
         list.RemoveFirst();
-        Expect(list.First.next == list.First && list.First.Next == null, true, "하나 남은 노드: next는 자기 자신, Next는 null");
+        Expect(
+            list.First.next == list.First && list.First.Next == null,
+            true,
+            "하나 남은 노드: next는 자기 자신, Next는 null"
+        );
         list.RemoveLast();
-        Expect($"[{string.Join(" <-> ", list)}] (개수: {list.Count}), First: {list.First == null}, Last: {list.Last == null}", "[] (개수: 0), First: True, Last: True", "빈 리스트");
+        Expect(
+            $"[{string.Join(" <-> ", list)}] (개수: {list.Count}), First: {list.First == null}, Last: {list.Last == null}",
+            "[] (개수: 0), First: True, Last: True",
+            "빈 리스트"
+        );
         ExpectThrows<InvalidOperationException>(() => list.RemoveFirst(), "빈 리스트 예외");
 
         Debug.Log("\n7. 다른 리스트·제거된 노드 검증:");
@@ -72,46 +121,8 @@ public class LinkedListTest : MonoBehaviour
 
         Debug.Log("\n=== CircularDoublyLinkedList 테스트 완료 ===");
     }
-    void TestDoublyLinkedList()
-    {
-        Debug.Log("=== DoublyLinkedList 테스트 시작 ===");
 
-        var list = new DoublyLinkedList<string>();
-
-        Debug.Log("\n1. 추가 (AddLast / AddFirst):");
-        var b = list.AddLast("B");
-        list.AddLast("D");
-        list.AddFirst("A");
-        Expect($"{string.Join(" <-> ", list)} (개수: {list.Count})", "A <-> B <-> D (개수: 3)", "정방향");
-
-        Debug.Log("\n2. 노드 기준 삽입 (AddAfter / AddBefore):");
-        list.AddAfter(b, "C");
-        list.AddBefore(list.First, "시작");
-        Expect(string.Join(" <-> ", list), "시작 <-> A <-> B <-> C <-> D", "정방향");
-        Expect(string.Join(" <-> ", list.Backward()), "D <-> C <-> B <-> A <-> 시작", "역방향");
-
-        Debug.Log("\n3. 노드로 O(1) 제거 (Remove(node)):");
-        list.Remove(b);
-        Expect(string.Join(" <-> ", list), "시작 <-> A <-> C <-> D", "B 노드 제거");
-
-        Debug.Log("\n4. 값으로 제거 / 양 끝 제거:");
-        Expect(list.Remove("D"), true, "Remove(\"D\")");
-        list.RemoveFirst();
-        list.RemoveLast();
-        Expect($"{string.Join(" <-> ", list)} (개수: {list.Count})", "A (개수: 1)", "남은 내용");
-
-        Debug.Log("\n5. 다른 리스트의 노드 검증:");
-        var other = new DoublyLinkedList<string>();
-        var foreign = other.AddLast("X");
-        ExpectThrows<InvalidOperationException>(() => list.Remove(foreign), "예외 발생");
-
-        Debug.Log("\n6. 이미 제거된 노드 재사용 검증:");
-        ExpectThrows<InvalidOperationException>(() => list.AddAfter(b, "Z"), "예외 발생");
-
-        Debug.Log("\n=== DoublyLinkedList 테스트 완료 ===");
-    }
-
-    void TestForwardLinkedList()
+    private void TestForwardLinkedList()
     {
         Debug.Log("=== ForwardLinkedList 테스트 시작 ===");
 
@@ -121,7 +132,11 @@ public class LinkedListTest : MonoBehaviour
         var b = list.AddLast("B");
         list.AddLast("D");
         list.AddFirst("A");
-        Expect($"{string.Join(" -> ", list)} (개수: {list.Count})", "A -> B -> D (개수: 3)", "내용");
+        Expect(
+            $"{string.Join(" -> ", list)} (개수: {list.Count})",
+            "A -> B -> D (개수: 3)",
+            "내용"
+        );
 
         Debug.Log("\n2. 노드 기준 삽입 (AddAfter / AddBefore):");
         list.AddAfter(b, "C");
@@ -137,7 +152,11 @@ public class LinkedListTest : MonoBehaviour
         Expect(list.Remove("D 앞"), true, "Remove(\"D 앞\")");
         list.RemoveFirst();
         list.RemoveLast();
-        Expect($"{string.Join(" -> ", list)} (개수: {list.Count}), Last: {list.Last.Value}", "A -> C (개수: 2), Last: C", "남은 내용");
+        Expect(
+            $"{string.Join(" -> ", list)} (개수: {list.Count}), Last: {list.Last.Value}",
+            "A -> C (개수: 2), Last: C",
+            "남은 내용"
+        );
 
         Debug.Log("\n5. 다른 리스트의 노드 검증:");
         var other = new ForwardLinkedList<string>();
@@ -149,19 +168,6 @@ public class LinkedListTest : MonoBehaviour
 
         Debug.Log("\n=== ForwardLinkedList 테스트 완료 ===");
     }
-    void Run(Action test)
-    {
-        try
-        {
-            test();
-        }
-        catch (Exception e)
-        {
-            failCount++;
-            Debug.LogError($"[실패] {test.Method.Name} 중단 - 예상하지 못한 예외: {e}");
-        }
-    }
-
 
     private void TestSinglyLinkedList()
     {
