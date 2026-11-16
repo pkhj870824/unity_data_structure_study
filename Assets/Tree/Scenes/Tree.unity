@@ -277,7 +277,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BinarySearchTreeTest
   treeVisualizer: {fileID: 815174549}
-  nodeCount: 10
+  nodeCount: 50
   minKey: 1
   maxKey: 1000
 --- !u!4 &815174548
@@ -308,7 +308,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TreeVisualizer
   nodePrefab: {fileID: 6588033273114346585, guid: dcc347f74a36de04f9b15a2c6a8e9d42, type: 3}
-  spacingType: 0
+  spacingType: 1
   verticalSpacing: 2
   horizontalSpacing: 2
 --- !u!1 &961739749
