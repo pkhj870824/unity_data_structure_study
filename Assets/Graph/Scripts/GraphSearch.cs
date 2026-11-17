@@ -136,4 +136,135 @@ public class GraphSearch
         path.Reverse();
         return true;
     }
+
+    public bool Dijkstra(GraphNode startNode, GraphNode endNode)
+    {
+        path.Clear();
+        graph.ResetNodePrevious();
+
+        var visited = new HashSet<GraphNode>();
+        var pQueue = new PriorityQueue<GraphNode, int>();
+        var distances = new int[graph.nodes.Length];
+        for (int i = 0; i < distances.Length; ++i)
+        {
+            distances[i] = int.MaxValue;
+        }
+
+        distances[startNode.id] = 0;
+        pQueue.Enqueue(startNode, distances[startNode.id]);
+
+        bool success = false;
+        while (pQueue.Count > 0)
+        {
+            var currentNode = pQueue.Dequeue();
+            if (visited.Contains(currentNode))
+                continue;
+
+            if (currentNode == endNode)
+            {
+                success = true;
+                break;
+            }
+            visited.Add(currentNode);
+
+            foreach (var adjacent in currentNode.adjacents)
+            {
+                if (!adjacent.Canvisit || visited.Contains(adjacent))
+                    continue;
+
+                var newDistance = distances[currentNode.id] + adjacent.weight;
+                if (distances[adjacent.id] > newDistance)
+                {
+                    distances[adjacent.id] = newDistance;
+                    adjacent.previous = currentNode;
+                    pQueue.Enqueue(adjacent, newDistance);
+                }
+            }
+        }
+
+        if (!success)
+        {
+            return false;
+        }
+
+        GraphNode step = endNode;
+        while (step != null)
+        {
+            path.Add(step);
+            step = step.previous;
+        }
+        path.Reverse();
+        return true;
+    }
+    private int Heuristic(GraphNode a, GraphNode b)
+    {
+        int ax = a.id % graph.cols;
+        int ay = a.id / graph.cols;
+
+        int bx = b.id % graph.cols;
+        int by = b.id / graph.cols;
+
+        return Mathf.Abs(ax - bx) + Mathf.Abs(ay - by);
+    }
+    public bool AStar(GraphNode startNode, GraphNode endNode)
+    {
+        path.Clear();
+        graph.ResetNodePrevious();
+
+        var visited = new HashSet<GraphNode>();
+        var pQueue = new PriorityQueue<GraphNode, int>();
+        var distances = new int[graph.nodes.Length];
+        for (int i = 0; i < distances.Length; ++i)
+        {
+            distances[i] = int.MaxValue;
+        }
+
+        distances[startNode.id] = 0;
+        pQueue.Enqueue(startNode, distances[startNode.id] + Heuristic(startNode, endNode));
+
+        bool success = false;
+        while (pQueue.Count > 0)
+        {
+            var currentNode = pQueue.Dequeue();
+            if (visited.Contains(currentNode))
+                continue;
+
+            if (currentNode == endNode)
+            {
+                success = true;
+                break;
+            }
+            visited.Add(currentNode);
+
+            foreach (var adjacent in currentNode.adjacents)
+            {
+                if (!adjacent.Canvisit || visited.Contains(adjacent))
+                    continue;
+
+                var newDistance = distances[currentNode.id] + adjacent.weight;
+                if (distances[adjacent.id] > newDistance)
+                {
+                    distances[adjacent.id] = newDistance;
+                    adjacent.previous = currentNode;
+                    pQueue.Enqueue(adjacent, newDistance + Heuristic(adjacent, endNode));
+                }
+            }
+        }
+
+        if (!success)
+        {
+            return false;
+        }
+
+        GraphNode step = endNode;
+        while (step != null)
+        {
+            path.Add(step);
+            step = step.previous;
+        }
+        path.Reverse();
+        return true;
+    }
+
 }
+

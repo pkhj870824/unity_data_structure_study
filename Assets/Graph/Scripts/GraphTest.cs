@@ -10,6 +10,8 @@ public class GraphTest : MonoBehaviour
         BFS,
         DFSRecursive,
         PathFindingBFS,
+        Dijkstra,
+        AStar,
     }
     public UIGraphNode nodePrefab;
     public List<UIGraphNode> uiNodes;
@@ -23,11 +25,11 @@ public class GraphTest : MonoBehaviour
     {
         int[,] map = new int[5, 5]
         {
-        {1,-1,1,1,1},
-        {1,-1,1,1,1},
-        {1,-1,1,1,1},
-        {1,-1,1,1,1},
-        {1,1,1,1,1},
+        {1,-1,6,1,1},
+        {2,-1,3,1,7},
+        {1,-1,8,5,2},
+        {1,-1,7,3,1},
+        {1,1,5,3,1},
         };
         graph = new Graph();
         graph.Init(map);
@@ -75,6 +77,12 @@ public class GraphTest : MonoBehaviour
                 break;
             case Algorithm.PathFindingBFS:
                 search.PathFindingBFS(graph.nodes[startIndex], graph.nodes[endIndex]);
+                break;
+            case Algorithm.Dijkstra:
+                search.Dijkstra(graph.nodes[startIndex], graph.nodes[endIndex]);
+                break;
+            case Algorithm.AStar:
+                search.AStar(graph.nodes[startIndex], graph.nodes[endIndex]);
                 break;
         }
         ResetUiNodes();
