@@ -24,12 +24,27 @@ public class Stage : MonoBehaviour
     [Range(0f, 1f)]
     public float lakePercent = 0.1f;
 
+    [Range(0f, 1f)]
+    public float forestPercent = 0.15f;
+
+    [Range(0f, 1f)]
+    public float hillsPercent = 0.10f;
+
+    [Range(0f, 1f)]
+    public float mountainsPercent = 0.05f;
+
+    [Range(0f, 1f)]
+    public float townsPercent = 0.05f;
+
+    [Range(0f, 1f)]
+    public float monsterPercent = 0.03f;
+
     [ContextMenu("Reset Stage")]
     public void ResetStage()
     {
         map = new Map();
         map.Init(mapHeight, mapWidth);
-        map.CreateIsland(erodePercent, erodeIterations, lakePercent);
+        map.CreateIsland(erodePercent, erodeIterations, lakePercent, forestPercent, hillsPercent, mountainsPercent, townsPercent, monsterPercent);
         CreateGrid();
     }
 

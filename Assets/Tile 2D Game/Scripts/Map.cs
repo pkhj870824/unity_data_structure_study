@@ -10,9 +10,9 @@ public enum TileTypes
     Forest = 16,
     Hills = 17,
     Mountains = 18,
-    Towns= 19,
+    Towns = 19,
     Castle = 20,
-    Monster= 21,
+    Monster = 21,
 }
 
 public class Map
@@ -44,7 +44,7 @@ public class Map
 
         for (int r = 0; r < rows; ++r)
         {
-            for (int c = 0; c < rows; ++c)
+            for (int c = 0; c < cols; ++c)
             {
                 int index = r * cols + c;
                 var adjacents = tiles[index].adjacents;
@@ -73,15 +73,40 @@ public class Map
         }
     }
 
-    public bool CreateIsland(float erodePercent, float erodeIterations, float lakePercent)
+    public bool CreateIsland(
+        float erodePercent, float erodeIterations, float lakePercent,
+        float forestPercent, float hillsPercent, float mountainsPercent, float townsPercent, float monsterPercent)
     {
         DecorateTiles(LandTiles, lakePercent, TileTypes.Empty);
-
         for (int i = 0; i < erodeIterations; ++i)
         {
             DecorateTiles(CoastTiles, erodePercent, TileTypes.Empty);
         }
+        DecorateTiles(LandTiles, forestPercent, TileTypes.Forest);
+        DecorateTiles(LandTiles, hillsPercent, TileTypes.Hills);
+        DecorateTiles(LandTiles, mountainsPercent, TileTypes.Mountains);
+        DecorateTiles(LandTiles, townsPercent, TileTypes.Towns);
+        DecorateTiles(LandTiles, monsterPercent, TileTypes.Monster);
+
+        CreateCastle(LandTiles, TileTypes.Castle);
+
         return true;
+    }
+    public bool reachCastle(Tile tile)
+    {
+        if (tile == null)
+            return false;
+
+        return tile.autoTileId == (int)TileTypes.Grass ||
+               tile.autoTileId == (int)TileTypes.Towns ||
+               tile.autoTileId == (int)TileTypes.Castle;
+    }
+
+    public void CreateCastle(Tile[] tiles, TileTypes tileType)
+    {
+        ShuffleTiles(tiles);
+
+        tiles[0].autoTileId = (int)tileType;
     }
 
     public void DecorateTiles(Tile[] tiles, float percent, TileTypes tileType)
