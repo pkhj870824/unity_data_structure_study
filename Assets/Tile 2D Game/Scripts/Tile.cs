@@ -74,7 +74,7 @@ public class Tile
         fogAutoTileId = 0;
         for (int i = 0; i < adjacents.Length; ++i)
         {
-            if (adjacents[i].revealTile == true)
+            if (adjacents[i] != null && adjacents[i].revealTile == true)
             {
                 fogAutoTileId |= 1 << i;
             }
