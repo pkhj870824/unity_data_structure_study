@@ -8,10 +8,55 @@ public enum Sides
 
 public class Tile
 {
+    public static readonly int[] tableWeight =
+    {
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        4,
+        int.MaxValue,
+        1,
+        1,
+        1,
+    };
+
+    public bool CanMove => autoTileId != (int)TileTypes.Empty && Weight < int.MaxValue;
+
+    public int Weight
+    {
+        get
+        {
+            if (autoTileId < 0 || autoTileId >= tableWeight.Length)
+            {
+                return int.MaxValue;
+            }
+            return tableWeight[autoTileId];
+        }
+    }
+
     public int id;
     public Tile[] adjacents = new Tile[4];
 
     public int autoTileId;
+
+    public Tile previous;
+
+    public bool revealTile;
+    public int fogAutoTileId;
 
     public void UpdateAutoTileId()
     {
@@ -21,6 +66,17 @@ public class Tile
             if (adjacents[i] != null)
             {
                 autoTileId |= 1 << i;
+            }
+        }
+    }
+        public void UpdateFogAutoTileId()
+    {
+        fogAutoTileId = 0;
+        for (int i = 0; i < adjacents.Length; ++i)
+        {
+            if (adjacents[i].revealTile == true)
+            {
+                fogAutoTileId |= 1 << i;
             }
         }
     }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -7,12 +8,12 @@ public enum TileTypes
 
     // 0, 14
     Grass = 15,
-    Forest = 16,
-    Hills = 17,
-    Mountains = 18,
-    Towns = 19,
-    Castle = 20,
-    Monster = 21,
+    Trees,
+    Hills,
+    Mountains,
+    Towns,
+    Castle,
+    Monster,
 }
 
 public class Map
@@ -22,14 +23,10 @@ public class Map
 
     public Tile[] tiles;
 
-    public Tile[] CoastTiles => tiles.Where(t => t.autoTileId >= 0 && t.autoTileId < (int)TileTypes.Grass).ToArray();
+    public Tile[] CoastTiles =>
+        tiles.Where(t => t.autoTileId >= 0 && t.autoTileId < (int)TileTypes.Grass).ToArray();
+
     public Tile[] LandTiles => tiles.Where(t => t.autoTileId >= (int)TileTypes.Grass).ToArray();
-    public Tile[] ForestTiles => tiles.Where(t => t.autoTileId == (int)TileTypes.Forest).ToArray();
-    public Tile[] HillsTiles => tiles.Where(t => t.autoTileId == (int)TileTypes.Hills).ToArray();
-    public Tile[] MountainsTiles => tiles.Where(t => t.autoTileId == (int)TileTypes.Mountains).ToArray();
-    public Tile[] TownsTiles => tiles.Where(t => t.autoTileId == (int)TileTypes.Towns).ToArray();
-    public Tile[] CastleTiles => tiles.Where(t => t.autoTileId == (int)TileTypes.Castle).ToArray();
-    public Tile[] MonsterTiles => tiles.Where(t => t.autoTileId == (int)TileTypes.Monster).ToArray();
 
     public void Init(int rows, int cols)
     {
@@ -44,7 +41,7 @@ public class Map
 
         for (int r = 0; r < rows; ++r)
         {
-            for (int c = 0; c < cols; ++c)
+            for (int c = 0; c < rows; ++c)
             {
                 int index = r * cols + c;
                 var adjacents = tiles[index].adjacents;
@@ -73,40 +70,125 @@ public class Map
         }
     }
 
+    public Tile startTile;
+    public Tile castleTile;
+
     public bool CreateIsland(
-        float erodePercent, float erodeIterations, float lakePercent,
-        float forestPercent, float hillsPercent, float mountainsPercent, float townsPercent, float monsterPercent)
+        float erodePercent,
+        float erodeIterations,
+        float lakePercent,
+        float treePercent,
+        float hillPercent,
+        float moutainPercent,
+        float townPercent,
+        float monsterPercent
+    )
     {
         DecorateTiles(LandTiles, lakePercent, TileTypes.Empty);
+
         for (int i = 0; i < erodeIterations; ++i)
         {
             DecorateTiles(CoastTiles, erodePercent, TileTypes.Empty);
         }
-        DecorateTiles(LandTiles, forestPercent, TileTypes.Forest);
-        DecorateTiles(LandTiles, hillsPercent, TileTypes.Hills);
-        DecorateTiles(LandTiles, mountainsPercent, TileTypes.Mountains);
-        DecorateTiles(LandTiles, townsPercent, TileTypes.Towns);
+
+        DecorateTiles(LandTiles, treePercent, TileTypes.Trees);
+        DecorateTiles(LandTiles, hillPercent, TileTypes.Hills);
+        DecorateTiles(LandTiles, moutainPercent, TileTypes.Mountains);
+        DecorateTiles(LandTiles, townPercent, TileTypes.Towns);
         DecorateTiles(LandTiles, monsterPercent, TileTypes.Monster);
 
-        CreateCastle(LandTiles, TileTypes.Castle);
-
-        return true;
-    }
-    public bool reachCastle(Tile tile)
-    {
-        if (tile == null)
+        var towns = tiles.Where(x => x.autoTileId == (int)TileTypes.Towns).ToArray();
+        if (towns.Length < 2)
+        {
             return false;
+        }
 
-        return tile.autoTileId == (int)TileTypes.Grass ||
-               tile.autoTileId == (int)TileTypes.Towns ||
-               tile.autoTileId == (int)TileTypes.Castle;
+        ShuffleTiles(towns);
+
+        startTile = towns[0];
+        castleTile = towns[1];
+        castleTile.autoTileId = (int)TileTypes.Castle;
+
+        return PathFinding(startTile, castleTile) != null;
     }
 
-    public void CreateCastle(Tile[] tiles, TileTypes tileType)
+    private int Heuristic(Tile a, Tile b)
     {
-        ShuffleTiles(tiles);
+        int ax = a.id % cols;
+        int ay = a.id / cols;
 
-        tiles[0].autoTileId = (int)tileType;
+        int bx = b.id % cols;
+        int by = b.id / cols;
+
+        return Mathf.Abs(ax - bx) + Mathf.Abs(ay - by);
+    }
+
+    private void ResetTilePrevious()
+    {
+        foreach (var tile in tiles)
+        {
+            tile.previous = null;
+        }
+    }
+
+    public List<Tile> PathFinding(Tile start, Tile end)
+    {
+        ResetTilePrevious();
+
+        var visited = new HashSet<Tile>();
+        var pQueue = new PriorityQueue<Tile, int>();
+        var distances = new int[tiles.Length];
+        for (int i = 0; i < distances.Length; ++i)
+        {
+            distances[i] = int.MaxValue;
+        }
+        distances[start.id] = 0;
+        pQueue.Enqueue(start, distances[start.id] + Heuristic(start, end));
+
+        bool success = false;
+        while (pQueue.Count > 0)
+        {
+            var currentNode = pQueue.Dequeue();
+            if (visited.Contains(currentNode))
+                continue;
+
+            if (currentNode == end)
+            {
+                success = true;
+                break;
+            }
+
+            visited.Add(currentNode);
+
+            foreach (var adjacent in currentNode.adjacents)
+            {
+                if (adjacent == null || visited.Contains(adjacent) || !adjacent.CanMove)
+                    continue;
+
+                var newDistance = distances[currentNode.id] + adjacent.Weight;
+                if (distances[adjacent.id] > newDistance)
+                {
+                    distances[adjacent.id] = newDistance;
+                    adjacent.previous = currentNode;
+                    pQueue.Enqueue(adjacent, newDistance + Heuristic(adjacent, end));
+                }
+            }
+        }
+
+        if (!success)
+        {
+            return null;
+        }
+
+        List<Tile> path = new List<Tile>();
+        Tile step = end;
+        while (step != null)
+        {
+            path.Add(step);
+            step = step.previous;
+        }
+        path.Reverse();
+        return path;
     }
 
     public void DecorateTiles(Tile[] tiles, float percent, TileTypes tileType)
