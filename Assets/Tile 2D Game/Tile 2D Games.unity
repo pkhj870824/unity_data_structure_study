@@ -303,7 +303,7 @@ MonoBehaviour:
   - {fileID: 21300038, guid: 6dda2095192964815b349ac505a5e664, type: 3}
   - {fileID: 21300040, guid: 6dda2095192964815b349ac505a5e664, type: 3}
   - {fileID: 21300042, guid: 6dda2095192964815b349ac505a5e664, type: 3}
-  fogSprites:
+  fowSprites:
   - {fileID: 21300000, guid: dfa5f63634ba24c06a7c899467e4f9f3, type: 3}
   - {fileID: 21300002, guid: dfa5f63634ba24c06a7c899467e4f9f3, type: 3}
   - {fileID: 21300004, guid: dfa5f63634ba24c06a7c899467e4f9f3, type: 3}
@@ -328,7 +328,7 @@ MonoBehaviour:
   moutainPercent: 0.1
   townPercent: 0.1
   monsterPercent: 0.03
-  revealRange: 5
+  visitRadius: 1
   firstTilePos: {x: 0, y: 0, z: 0}
   playerPrefab: {fileID: 5154024124986955222, guid: 3097208ef0f43be42affe48f41c696bf, type: 3}
 --- !u!4 &901919685

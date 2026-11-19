@@ -67,6 +67,7 @@ public class Map
         for (int i = 0; i < tiles.Length; ++i)
         {
             tiles[i].UpdateAutoTileId();
+            tiles[i].UpdateAutoFowId();
         }
     }
 
@@ -111,7 +112,7 @@ public class Map
 
         return PathFinding(startTile, castleTile) != null;
     }
-
+    
     private int Heuristic(Tile a, Tile b)
     {
         int ax = a.id % cols;

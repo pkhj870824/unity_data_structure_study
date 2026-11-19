@@ -55,8 +55,8 @@ public class Tile
 
     public Tile previous;
 
-    public bool revealTile;
-    public int fogAutoTileId;
+    public bool isVisited;
+    public int autoFowId;
 
     public void UpdateAutoTileId()
     {
@@ -69,17 +69,18 @@ public class Tile
             }
         }
     }
-        public void UpdateFogAutoTileId()
+public void UpdateAutoFowId()
+{
+    autoFowId = 0;
+
+    for (int i = 0; i < adjacents.Length; ++i)
     {
-        fogAutoTileId = 0;
-        for (int i = 0; i < adjacents.Length; ++i)
+        if (adjacents[i] != null && !adjacents[i].isVisited)
         {
-            if (adjacents[i] != null && adjacents[i].revealTile == true)
-            {
-                fogAutoTileId |= 1 << i;
-            }
+            autoFowId |= 1 << i;
         }
     }
+}
 
     public void RemoveAdjacents(Tile tile)
     {
