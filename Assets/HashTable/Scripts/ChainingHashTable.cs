@@ -2,12 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using JetBrains.Annotations;
-using Unity.Collections;
-using Unity.VisualScripting;
-using UnityEditor.Experimental.GraphView;
-using UnityEngine.InputSystem;
-using UnityEngine.UIElements;
 
 // 충돌 해결 = 버킷별 LinkedList 체인
 public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
@@ -16,6 +10,7 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
     private const double LoadFactor = 0.75;
 
     private LinkedList<KeyValuePair<TKey, TValue>>[] buckets;
+
     private int size;
     private int count;
 
@@ -24,6 +19,9 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
         buckets = new LinkedList<KeyValuePair<TKey, TValue>>[DefaultCapacity];
         size = DefaultCapacity;
         count = 0;
+
+        keyComparer = EqualityComparer<TKey>.Default;
+        valueComparer = EqualityComparer<TValue>.Default;
     }
 
     private int GetHash(TKey key)
@@ -58,22 +56,25 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
 
             int index = GetHash(key);
             // [빈칸 ⑤] 같은 키가 체인에 있으면 값을 바꾸고, 없으면 체인 끝에 추가한다
-            var node = buckets[index]?.First;
+            // 버킷이 없으면 만들고, 같은 키가 있으면 값을 바꾸고, 없으면 체인 끝에 추가한다
+            if (buckets[index] == null)
+            {
+                buckets[index] = new LinkedList<KeyValuePair<TKey, TValue>>();
 
+            }
+            var node = buckets[index].First;
             while (node != null)
             {
-                if (node.Value.Key.Equals(key))
+                if (keyComparer.Equals(node.Value.Key, key))
                 {
-                    node.Value = new KeyValuePair<TKey, TValue>(key, value);
-
-                    // 현재 노드의 Key와 key를 비교
-
-                    // 일치하면 현재 노드의 Value를 교체하고 종료
-
-                    // 일치하지 않으면 다음 노드로 이동
+                    buckets[index].Remove(node);
+                    buckets[index].AddLast(new KeyValuePair<TKey, TValue>(key, value));
+                    return;
                 }
+                node = node.Next;
             }
             buckets[index].AddLast(new KeyValuePair<TKey, TValue>(key, value));
+            count++;
         }
     }
 
@@ -129,16 +130,28 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
         size *= 2;
         buckets = new LinkedList<KeyValuePair<TKey, TValue>>[size];
         // [빈칸 ④] count를 0으로 돌리고, 옛 버킷의 모든 항목을 Add로 다시 넣는다
-        count = 0;
-        for (int i = 0; i < oldSize; ++i)
+
+        for (int i = 0; i < oldSize; i++)
         {
-            if (oldBuckets[i] == null)
-                continue;
-            foreach (KeyValuePair<TKey, TValue> kvp in oldBuckets[i])
+            if (oldBuckets[i] != null)
             {
-                Add(kvp.Key, kvp.Value);
+                foreach (var kvp in oldBuckets[i])
+                {
+                    Add(kvp);
+                }
             }
         }
+        // count = 0;
+        // foreach (var bucket in oldBuckets)
+        // {
+        //     if (bucket != null)
+        //     {
+        //         foreach (var kvp in bucket)
+        //         {
+        //             Add(kvp);
+        //         }
+        //     }
+        // }
     }
 
     public void Add(TKey key, TValue value)
@@ -247,10 +260,15 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
 
         int index = GetHash(key);
         // [빈칸 ③] 체인을 LinkedListNode로 따라가며 같은 키의 노드를 지운다
-        var node = buckets[index]?.First;
+        // buckets[index].First부터 node.Next로 따라가며 찾은 노드를 Remove(node)로 지운다
+        if (buckets[index] == null)
+        {
+            return false;
+        }
+        var node = buckets[index].First;
         while (node != null)
         {
-            if (node.Value.Key.Equals(key))
+            if (keyComparer.Equals(node.Value.Key, key))
             {
                 buckets[index].Remove(node);
                 count--;
@@ -264,12 +282,21 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
     public bool Remove(KeyValuePair<TKey, TValue> item)
     {
         // [빈칸 ③] Remove(key)와 같되 값까지 같아야 지운다
-        int index = GetHash(item.Key);
+        if (item.Key == null)
+            throw new ArgumentNullException(nameof(item.Key));
 
-        var node = buckets[index]?.First;
+        int index = GetHash(item.Key);
+        // [빈칸 ③] 체인을 LinkedListNode로 따라가며 같은 키의 노드를 지운다
+        // buckets[index].First부터 node.Next로 따라가며 찾은 노드를 Remove(node)로 지운다
+        if (buckets[index] == null)
+        {
+            return false;
+        }
+        var node = buckets[index].First;
         while (node != null)
         {
-            if (EqualityComparer<TKey>.Default.Equals(node.Value.Key,item.Key) && EqualityComparer<TValue>.Default.Equals(node.Value.Value,item.Value))
+            if (keyComparer.Equals(node.Value.Key, item.Key) &&
+                valueComparer.Equals(node.Value.Value, item.Value))
             {
                 buckets[index].Remove(node);
                 count--;
@@ -279,24 +306,28 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
         }
         return false;
     }
-
+    private EqualityComparer<TKey> keyComparer;
+    private EqualityComparer<TValue> valueComparer;
     public bool TryGetValue(TKey key, out TValue value)
     {
+
         if (key == null)
             throw new ArgumentNullException(nameof(key));
 
         int index = GetHash(key);
         // [빈칸 ②] 버킷의 체인을 순회해 같은 키를 찾으면 value에 담고 true
-        var node = buckets[index]?.First;
-        while (node != null)
+        if (buckets[index] == null)
         {
-            if (node.Value.Key.Equals(key))
+            foreach (var chain in buckets[index])
             {
-                value = node.Value.Value;
-                return true;
+                if (keyComparer.Equals(chain.Key, key))
+                {
+                    value = chain.Value;
+                    return true;
+                }
             }
-            node = node.Next;
         }
+
 
         value = default;
         return false;
@@ -311,9 +342,16 @@ public class ChainingHashTable<TKey, TValue> : IDictionary<TKey, TValue>
                 yield return new BucketView(i, BucketState.Empty, null, null, null);
                 continue;
             }
-
             // [빈칸 ⑥] 체인의 (Key, Value)를 문자열 튜플 리스트로 모아 Occupied로 돌려준다
-            throw new NotImplementedException("빈칸 ⑥");
+            var chain = new List<(string Key, string Value)>();
+            foreach (var kvp in buckets[i])
+            {
+                //chain.Add((kvp.Key.ToString(), kvp.Value.ToString()));
+                chain.Add((Convert.ToString(kvp.Key), Convert.ToString(kvp.Value)));
+
+            }
+            yield return new BucketView(i, BucketState.Occupied, null, null, chain);
+
         }
     }
 

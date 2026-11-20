@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections.Generic;
 using TMPro;
@@ -36,16 +37,19 @@ public class HashTableView : MonoBehaviour
     private ProbingStrategies currentProbingStrategy = ProbingStrategies.Liner;
 
     private SimpleHashTable<string, int> simpleHashTable;
+    private ChainingHashTable<string, int> chainingHashTable;
+    private OpenAddressingHashTable<string, int> openAddressingHashTable;
 
-    // 리니어
-    // 오픈어드레싱
+    // OpenAddressing 추후 구현
 
     private List<HashTableBucketView> bucketViews = new List<HashTableBucketView>();
+    private List<string> logMessages = new List<string>();
 
     private void Start()
     {
         hashtableTyepDropdown.onValueChanged.AddListener(OnHashTableTypeChanged);
         probingStrategyDropdown.onValueChanged.AddListener(OnProbingStarategyChaned);
+
         addButton.onClick.AddListener(OnAddButtonClicked);
         removeButton.onClick.AddListener(OnRemoveButtonClicked);
         clearButton.onClick.AddListener(OnClearButtonClicked);
@@ -64,11 +68,12 @@ public class HashTableView : MonoBehaviour
             case HashTableTypes.Simple:
                 simpleHashTable = new SimpleHashTable<string, int>();
                 break;
+
             case HashTableTypes.Chaining:
-
+                chainingHashTable = new ChainingHashTable<string, int>();
                 break;
-            case HashTableTypes.OpenAddressing:
 
+            case HashTableTypes.OpenAddressing:
                 break;
         }
 
@@ -81,11 +86,14 @@ public class HashTableView : MonoBehaviour
         {
             case HashTableTypes.Simple:
                 return simpleHashTable.Capacity;
+
             case HashTableTypes.Chaining:
-                return 0;
+                return chainingHashTable.Capacity;
+
             case HashTableTypes.OpenAddressing:
                 return 0;
         }
+
         return 0;
     }
 
@@ -98,14 +106,18 @@ public class HashTableView : MonoBehaviour
                 Destroy(bucket.gameObject);
             }
         }
+
         bucketViews.Clear();
 
         int capacity = GetCapacity();
+
         for (int i = 0; i < capacity; ++i)
         {
             var bucketView = Instantiate(bucketPrefab, bucketRoot);
+
             bucketView.SetIndex(i);
             bucketView.SetEmpty();
+
             bucketViews.Add(bucketView);
         }
     }
@@ -116,17 +128,21 @@ public class HashTableView : MonoBehaviour
         {
             case HashTableTypes.Simple:
                 return simpleHashTable.GetBucketViews();
+
             case HashTableTypes.Chaining:
-                return Array.Empty<BucketView>();
+                return chainingHashTable.GetBucketViews();
+
             case HashTableTypes.OpenAddressing:
                 return Array.Empty<BucketView>();
         }
+
         return Array.Empty<BucketView>();
     }
 
     private void UpdateBucketViews()
     {
         int capacity = GetCapacity();
+
         if (capacity != bucketViews.Count)
         {
             AddLog($"리사이즈 감지: {bucketViews.Count} -> {capacity}");
@@ -134,22 +150,32 @@ public class HashTableView : MonoBehaviour
         }
 
         var views = GetBucketViews();
+
         foreach (var view in views)
         {
+            if (view.Index < 0 || view.Index >= bucketViews.Count)
+            {
+                continue;
+            }
+
             var bucketView = bucketViews[view.Index];
+
             switch (view.State)
             {
                 case BucketState.Empty:
                     bucketView.SetEmpty();
                     break;
+
                 case BucketState.Occupied:
                     if (view.Chain != null)
                     {
                         var items = new List<string>();
+
                         foreach (var entry in view.Chain)
                         {
                             items.Add($"K: {entry.Key} V: {entry.Value}");
                         }
+
                         bucketView.SetChainedItesm(items);
                     }
                     else
@@ -157,14 +183,13 @@ public class HashTableView : MonoBehaviour
                         bucketView.SetOccupied(view.Key, view.Value);
                     }
                     break;
+
                 case BucketState.Deleted:
                     bucketView.SetDeleted();
                     break;
             }
         }
     }
-
-    private List<string> logMessages = new List<string>();
 
     private void AddLog(string message)
     {
@@ -187,33 +212,46 @@ public class HashTableView : MonoBehaviour
 
         InitHashTable();
         UpdateBucketViews();
+
         AddLog($"해시 테이블 변경: {currentHashTableType}");
     }
 
     private void OnProbingStarategyChaned(int index)
     {
         currentProbingStrategy = (ProbingStrategies)index;
+
         if (currentHashTableType == HashTableTypes.OpenAddressing)
         {
             InitHashTable();
             UpdateBucketViews();
-            AddLog($"충돌 해결 전략 변경 : {currentProbingStrategy}");
+
+            AddLog($"충돌 해결 전략 변경: {currentProbingStrategy}");
         }
     }
 
     private void OnAddButtonClicked()
     {
+        if (currentHashTableType == HashTableTypes.OpenAddressing)
+        {
+            AddLog("ADD 실패: OpenAddressing은 아직 구현되지 않았습니다.");
+            return;
+        }
+
         if (string.IsNullOrEmpty(keyInputFiled.text))
         {
-            keyInputFiled.text = UnityEngine.Random.Range(-99999, 99999).ToString();
+            keyInputFiled.text =
+                UnityEngine.Random.Range(-99999, 99999).ToString();
         }
 
         if (string.IsNullOrEmpty(valueInputFiled.text))
         {
-            valueInputFiled.text = UnityEngine.Random.Range(-99999, 99999).ToString();
+            valueInputFiled.text =
+                UnityEngine.Random.Range(-99999, 99999).ToString();
         }
 
-        string key = valueInputFiled.text;
+        // 수정: Value가 아닌 Key 입력 필드 사용
+        string key = keyInputFiled.text;
+
         if (int.TryParse(valueInputFiled.text, out int value))
         {
             try
@@ -223,55 +261,79 @@ public class HashTableView : MonoBehaviour
                     case HashTableTypes.Simple:
                         simpleHashTable.Add(key, value);
                         break;
+
                     case HashTableTypes.Chaining:
-                        break;
-                    case HashTableTypes.OpenAddressing:
+                        chainingHashTable.Add(key, value);
                         break;
                 }
 
                 AddLog($"ADD: {key}, {value}");
                 UpdateBucketViews();
+
                 keyInputFiled.text = string.Empty;
                 valueInputFiled.text = string.Empty;
             }
             catch (Exception e)
             {
                 AddLog($"ADD 실패: {key}, {value} {e.Message}");
+
                 keyInputFiled.text = string.Empty;
                 valueInputFiled.text = string.Empty;
             }
         }
         else
         {
-            AddLog("ADD 실패: 유효한 숫자를 입력하세요.");
+            AddLog("ADD 실패: 유효한 숫자 값을 입력하세요.");
         }
     }
 
     private void OnRemoveButtonClicked()
     {
         string key = keyInputFiled.text;
-        bool removed = false;
-        switch (currentHashTableType)
+
+        if (string.IsNullOrEmpty(key))
         {
-            case HashTableTypes.Simple:
-                removed = simpleHashTable.Remove(key);
-                break;
-            case HashTableTypes.Chaining:
-                break;
-            case HashTableTypes.OpenAddressing:
-                break;
+            AddLog("REMOVE 실패: 키를 입력하세요.");
+            return;
         }
 
-        if (removed)
+        if (currentHashTableType == HashTableTypes.OpenAddressing)
         {
-            AddLog($"REMOVE: {key} (성공)");
-            UpdateBucketViews();
-            keyInputFiled.text = string.Empty;
-            valueInputFiled.text = string.Empty;
+            AddLog("REMOVE 실패: OpenAddressing은 아직 구현되지 않았습니다.");
+            return;
         }
-        else
+
+        try
         {
-            AddLog($"REMOVE: {key} (키를 찾을수 없음)");
+            bool removed = false;
+
+            switch (currentHashTableType)
+            {
+                case HashTableTypes.Simple:
+                    removed = simpleHashTable.Remove(key);
+                    break;
+
+                case HashTableTypes.Chaining:
+                    removed = chainingHashTable.Remove(key);
+                    break;
+            }
+
+            if (removed)
+            {
+                AddLog($"REMOVE: {key} (성공)");
+                UpdateBucketViews();
+
+                keyInputFiled.text = string.Empty;
+                valueInputFiled.text = string.Empty;
+            }
+            else
+            {
+                AddLog($"REMOVE: {key} (키를 찾을 수 없음)");
+            }
+        }
+        catch (Exception e)
+        {
+            AddLog($"REMOVE 실패: {e.Message}");
         }
     }
 
@@ -282,11 +344,16 @@ public class HashTableView : MonoBehaviour
             case HashTableTypes.Simple:
                 simpleHashTable.Clear();
                 break;
+
             case HashTableTypes.Chaining:
+                chainingHashTable.Clear();
                 break;
+
             case HashTableTypes.OpenAddressing:
-                break;
+                AddLog("CLEAR 실패: OpenAddressing은 아직 구현되지 않았습니다.");
+                return;
         }
+
         AddLog("CLEAR");
         UpdateBucketViews();
     }
